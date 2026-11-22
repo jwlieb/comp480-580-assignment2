@@ -118,7 +118,10 @@ def citation_identity(citation, aliases):
         return None
     if any(not isinstance(author, str) or not author.strip() for author in authors):
         return None
-    return doi, title, tuple(map(author_key, authors)), aliases.get(venue, venue), int(citation["year"])
+    abbreviated_authors = text_key(authors[-1]) == "et al"
+    listed_authors = authors[:-1] if abbreviated_authors else authors
+    author_identity = (tuple(map(author_key, listed_authors)), abbreviated_authors)
+    return doi, title, author_identity, aliases.get(venue, venue), str(citation["year"])
 
 
 def task_text(dataset, record):

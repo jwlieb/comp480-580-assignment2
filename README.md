@@ -6,6 +6,15 @@ This implementation runs the Spartacus agent with optional task-level and conten
 
 Use Python 3.10 or newer and configure a Gemini key in `~/.config/spartacus/env` or `GEMINI_API_KEY`.
 
+The live results in the report were measured at commit `cc2021dac172577a67a7e2c5fb1f79946d3e8223`. To reproduce that revision in a separate checkout, run:
+
+```sh
+git worktree add --detach ../assignment2-benchmark cc2021dac172577a67a7e2c5fb1f79946d3e8223
+cd ../assignment2-benchmark
+```
+
+Run the commands below from the benchmark checkout for the archived configuration or from this checkout for the reviewed implementation.
+
 ```sh
 git clone https://github.com/sahiljoshi515/Assignment2_COMP_580.git upstream-assignment
 git -C upstream-assignment checkout --detach a7c5076fec5150934565adb228411b19070070d3
@@ -19,6 +28,8 @@ python3 policy.py replay
 ```
 
 The run selects eight tasks per dataset with seed 480580 and evaluates each task in all four configurations. Repeat the same command to continue an interrupted run. Omit `--limit 8` and use a fresh output directory to evaluate every incoming task. Use `--datasets` to select datasets or `--modes` to select configurations. The audit scores history matches with the supplied verifiers. The replay measures compression on fixed tool reads.
+
+The reviewed implementation sends full output when the same tool arguments identify different results. Citation reuse distinguishes a trailing `et al.` from an author name and compares years exactly. The offline audit and fixed-read replay reproduced the same results after these changes.
 
 ## Implementation
 

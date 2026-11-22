@@ -63,6 +63,7 @@ class ContentReuse:
         self.index = LSH()
         self.observations = []
         self.folded = {}
+        self.source_contents = {}
         self.seconds = 0.0
         self.hits = 0
         self.bytes_saved = 0
@@ -96,14 +97,20 @@ class ContentReuse:
 
     def _observe(self, call, message, messages):
         tool, output = call["name"], message["text"]
-        if tool not in READ_TOOLS or len(output) < 400 or len(output) > 80_000:
+        if tool not in READ_TOOLS:
+            return
+        label = f'{tool} {json.dumps(call.get("args", {}), ensure_ascii=False, sort_keys=True)}'
+        # A repeated command can observe a different version. Its arguments
+        # alone can no longer identify an earlier result unambiguously.
+        if self.source_contents.setdefault(label, output) != output:
+            self.source_contents[label] = None
+        if len(output) < 400 or len(output) > 80_000:
             return
         if output.startswith(("ERROR:", "BLOCKED:")) or "... truncated at " in output:
             return
         lines, numbered = _split(tool, output)
         if len(lines) > 600:
             return
-        label = f'{tool} {json.dumps(call.get("args", {}), ensure_ascii=False, sort_keys=True)}'
         signature = self.hasher.signature(shingles("\n".join(lines), mask_numbers=True))
         live = {id(item) for item in messages}
         candidates = sorted(self.index.query(signature), key=lambda item: (-item[1], item[0]))
@@ -115,6 +122,8 @@ class ContentReuse:
             if score < self.threshold or id(base.message) not in live:
                 continue
             if base.message["name"] != tool or base.numbered != numbered:
+                continue
+            if self.source_contents[base.label] is None:
                 continue
             edits = changes(base.lines, lines)
             if _join(reconstruct(base.lines, edits), numbered) != output:
